@@ -12,11 +12,7 @@
        (some #(= % 2))))
 
 (defn increasing? [digits]
-  (loop [[l r & more] digits]
-    (cond
-      (nil? r) true
-      (> l r) false
-      :else (recur (cons r more)))))
+  (apply <= digits))
 
 (defn int->digits [n]
   (mapv #(- (int %) (int \0)) (str n)))
