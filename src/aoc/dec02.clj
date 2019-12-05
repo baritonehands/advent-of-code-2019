@@ -2,34 +2,57 @@
   (:require [aoc.utils :as utils]
             [clojure.string :as str]))
 
-(defmulti cpu (fn [[mem ip]]
-                (get mem ip)))
+(defn opcode->instruction [opcode]
+  (mod opcode 100))
 
-(defn arithmetic [mem ip op]
-  (let [[_ lx rx ox] (subvec mem ip (+ 4 ip))
-        l (get mem lx)
-        r (get mem rx)]
-    [(assoc mem ox (op l r))
-     (+ ip 4)]))
+(defmulti cpu (fn [{:keys [mem ip] :as state}]
+                (opcode->instruction (get mem ip))))
 
-(defmethod cpu 1 [[mem ip]]
-  (arithmetic mem ip +))
+(defn lpad [s]
+  (let [pad (- 3 (count s))]
+    (->> (concat (repeat pad \0) s)
+         (map #(- (int %) (int \0)))
+         (reverse)
+         (vec))))
 
-(defmethod cpu 2 [[mem ip]]
-  (arithmetic mem ip *))
+(defn opcode->modes [opcode]
+  (-> opcode (/ 100) int str lpad))
 
-(defmethod cpu 99 [x]
-  (println "Halting")
-  x)
+(defn get-param [mode mem idx]
+  (if (= mode 0)
+    (get mem idx)
+    idx))
+
+(defn arithmetic [{:keys [mem ip] :as state} op]
+  (let [[opcode lx rx ox] (subvec mem ip (+ 4 ip))
+        [lm rm om] (opcode->modes opcode)
+        l (get-param lm mem lx)
+        r (get-param rm mem rx)]
+    (assert (zero? om))
+    (assoc state
+      :mem (assoc mem ox (op l r))
+      :ip (+ ip 4))))
+
+(defmethod cpu 1 [state]
+  (arithmetic state +))
+
+(defmethod cpu 2 [state]
+  (arithmetic state *))
+
+(defn exec [mem input]
+  (loop [{:keys [mem ip] :as state} {:mem    mem
+                                     :ip     0
+                                     :input  input
+                                     :output []}]
+    (if (= (get mem ip) 99)
+      state
+      (recur (cpu state)))))
 
 (defn attempt [init noun verb]
   (let [input (-> init
                   (assoc 1 noun)
                   (assoc 2 verb))]
-    (loop [[mem ip :as state] [input 0]]
-      (if (= (get mem ip) 99)
-        (first mem)
-        (recur (cpu state))))))
+    (-> (exec input nil) :mem first)))
 
 (defn run []
   (let [raw (-> (utils/day-file "02")
