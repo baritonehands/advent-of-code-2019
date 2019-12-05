@@ -17,18 +17,12 @@
 (defn int->digits [n]
   (mapv #(- (int %) (int \0)) (str n)))
 
-(defn part1-valid? [n]
-  (let [digits (int->digits n)]
-    (and (repeats? digits)
-         (increasing? digits))))
-
-(defn part2-valid? [n]
-  (let [digits (int->digits n)]
-    (and (part2-repeats? digits)
-         (increasing? digits))))
+(def part1-valid? (every-pred repeats? increasing?))
+(def part2-valid? (every-pred part2-repeats? increasing?))
 
 (defn run []
-  (let [input (range 367479 893698)]
+  (let [input (->> (range 367479 893698)
+                   (mapv int->digits))]
     {:part1 (->> input
                  (filter part1-valid?)
                  (count))
