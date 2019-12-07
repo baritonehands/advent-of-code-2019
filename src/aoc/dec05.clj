@@ -7,13 +7,14 @@
   (let [[opcode param] (subvec mem ip)
         [mode] (intcode/opcode->modes opcode)]
     (assert (zero? mode))
+    (assert (some? input))
     (assoc state
       :mem (assoc mem param (if (sequential? input)
                               (first input)
                               input))
       :ip (+ ip 2)
       :input (if (sequential? input)
-               (rest input)
+               (next input)
                input))))
 
 (defmethod intcode/cpu 4 [{:keys [mem ip output] :as state}]
