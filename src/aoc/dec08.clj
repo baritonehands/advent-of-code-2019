@@ -16,11 +16,9 @@
     (* (least-0 \1) (least-0 \2))))
 
 (defn get-pixel [layers idx]
-  (loop [[layer & more] layers]
-    (cond
-      (nil? layer) \2
-      (= (layer idx) \2) (recur more)
-      :else (layer idx))))
+  (->> (map #(% idx) layers)
+       (drop-while #(= % \2))
+       (first)))
 
 (defn point->idx [x y]
   (+ (* y width) x))
