@@ -18,19 +18,29 @@
 (defn opcode->modes [opcode]
   (-> opcode (/ 100) int str lpad))
 
-(defn get-param [mode mem idx]
-  (if (= mode 0)
-    (get mem idx)
-    idx))
+(defn get-param [mode {:keys [mem rb]} idx]
+  (case mode
+    0 (get mem idx 0)
+    1 idx
+    2 (get mem (+ rb idx) 0)))
+
+(defn set-param [mode {:keys [mem rb]} idx v]
+  (let [addr (if (zero? mode) idx (+ rb idx))
+        mem (if (> (count mem) addr)
+              mem
+              (->> (concat mem (repeat 0))
+                   (take (inc addr))
+                   (vec)))]
+    (assoc mem addr v)))
 
 (defn arithmetic [{:keys [mem ip] :as state} op]
   (let [[opcode lx rx ox] (subvec mem ip (+ 4 ip))
         [lm rm om] (opcode->modes opcode)
-        l (get-param lm mem lx)
-        r (get-param rm mem rx)]
-    (assert (zero? om))
+        l (get-param lm state lx)
+        r (get-param rm state rx)]
+    (assert (#{0 2} om))
     (assoc state
-      :mem (assoc mem ox (op l r))
+      :mem (set-param om state ox (op l r))
       :ip (+ ip 4))))
 
 (defmethod cpu 1 [state]
@@ -42,6 +52,7 @@
 (defn exec [mem input]
   (loop [{:keys [mem ip] :as state} {:mem    mem
                                      :ip     0
+                                     :rb     0
                                      :input  input
                                      :output []}]
     (if (= (get mem ip) 99)

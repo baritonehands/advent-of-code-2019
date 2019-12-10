@@ -28,7 +28,6 @@
    :output []})
 
 (defn exec-once [init]
-  (println init)
   (loop [{:keys [mem ip output input] :as state} init]
     (cond
       (= (get mem ip) 99) [true (assoc state :output [input])]
@@ -44,8 +43,6 @@
     (let [[halt? {:keys [output] :as state}] (amps cur)
           next-idx (mod (inc cur) 5)
           [_ next-amp] (get amps next-idx)]
-      (run! println amps)
-      (println cur "\n")
       (cond
         (and halt? (zero? next-idx))
         (first output)
