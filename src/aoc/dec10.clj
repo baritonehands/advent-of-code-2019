@@ -11,8 +11,8 @@
 (defn vlength [[x y]]
   (Math/sqrt (+ (* x x) (* y y))))
 
-(defn degrees [radians]
-  (-> (- radians) (* (/ 180 Math/PI)) (+ 180) (mod 360)))
+(defn invert [radians]
+  (-> (- radians) (+ Math/PI)))
 
 (defn parse-input [input]
   (set (for [[y row] (map-indexed vector input)
@@ -42,7 +42,7 @@
 (defn destroy-200 [p1 coords]
   (loop [[to-destroy dead] [(->> coords
                                  (sort-by #(vlength (v- % p1)))
-                                 (group-by (comp degrees vunit #(v- % p1)))
+                                 (group-by (comp invert vunit #(v- % p1)))
                                  (into (sorted-map)))
                             []]]
     (if (>= (count dead) 200)
