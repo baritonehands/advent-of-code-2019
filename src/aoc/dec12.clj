@@ -4,9 +4,6 @@
             [clojure.string :as s]
             [clojure.math.combinatorics :as combo]))
 
-(def test-input "<x=-1, y=0, z=2>\n<x=2, y=-10, z=-7>\n<x=4, y=-8, z=8>\n<x=3, y=5, z=-1>")
-(def test-input2 "<x=-8, y=-10, z=0>\n<x=5, y=5, z=10>\n<x=2, y=-7, z=3>\n<x=9, y=-8, z=-3>")
-
 (defn extract-var [s]
   (-> s (s/split #"=") (second) (Integer/parseInt)))
 
@@ -21,7 +18,7 @@
   [(+ x1 x2) (+ y1 y2) (+ z1 z2)])
 
 (defn energy [[x y z]]
-  (+ (Math/abs x) (Math/abs y) (Math/abs z)))
+  (+ (Math/abs ^long x) (Math/abs ^long y) (Math/abs ^long z)))
 
 (defn total-energy [[pos vel]]
   (* (energy pos) (energy vel)))
@@ -60,14 +57,16 @@
        (map total-energy)
        (apply +)))
 
-(defn cycle? [planets var-idx]
-  (->> (map second planets)
-       (every? #(= (get % var-idx) 0))))
+(defn cycle? [orig planets var-idx]
+  (->> (map vector orig planets)
+       (every? (fn [[[lpos lvel] [rpos rvel]]]
+                 (and (= (get lpos var-idx) (get rpos var-idx))
+                      (= (get rvel var-idx) 0))))))
 
 (defn var-cycle-count [planets var-idx]
   (->> (map-indexed vector (motion-seq planets))
        (drop 1)
-       (drop-while #(not (cycle? (second %) var-idx)))
+       (drop-while #(not (cycle? planets (second %) var-idx)))
        (ffirst)))
 
 (defn gcd
@@ -78,19 +77,17 @@
 
 (defn lcm
   ([a b]
-   (/ (Math/abs (* a b)) (gcd a b)))
+   (/ (Math/abs ^long (* a b)) (gcd a b)))
   ([a b c]
    (lcm a (lcm b c))))
 
 (defn part2 [planets]
   (->> (range 0 3)
        (map #(var-cycle-count planets %))
-       (apply lcm)
-       (* 2)))
+       (apply lcm)))
 
 (defn run []
   (let [input (->> (utils/day-file "12")
-                   ;(str/split test-input #"\n")
                    parse-input)]
     {:part1 (part1 input)
      :part2 (part2 input)}))
